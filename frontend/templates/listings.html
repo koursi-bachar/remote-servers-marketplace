@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Server Listings</h1>
+
+<div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filter Sidebar (Left) -->
+    <div class="lg:w-1/4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Filters</h2>
+                <button id="clearFilters" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                    Clear All
+                </button>
+            </div>
+
+            <!-- Search Box -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Search</label>
+                <input type="text" id="filterSearch" placeholder="Search listings..."
+                       class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+            </div>
+
+            <!-- Price Range -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Price per hour ($)</label>
+                <div class="flex gap-2">
+                    <input type="number" id="minPrice" placeholder="Min"
+                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+                    <input type="number" id="maxPrice" placeholder="Max"
+                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+                </div>
+            </div>
+
+            <!-- CPU & RAM -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">CPU & RAM</label>
+                <input type="number" id="minCpuCores" placeholder="Min CPU cores"
+                       class="mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+                <input type="number" id="minRamGb" placeholder="Min RAM (GB)"
+                       class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+            </div>
+
+            <!-- GPU Filters -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">GPU</label>
+                <input type="text" id="gpuModel" placeholder="GPU model (NVIDIA, AMD)"
+                       class="mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+                <input type="number" id="minGpuCount" placeholder="Min GPU count"
+                       class="mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+                <input type="number" id="minVramGb" placeholder="Min VRAM per GPU (GB)"
+                       class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+            </div>
+
+            <!-- Storage & Network -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Storage & Network</label>
+                <input type="number" id="minStorageGb" placeholder="Min Storage (GB)"
+                       class="mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+                <input type="number" id="minNetworkMbps" placeholder="Min Network (Mbps)"
+                       class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+            </div>
+
+            <!-- Location -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Location</label>
+                <input type="text" id="locationRegion" placeholder="Region (us-east, eu-west)"
+                       class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+            </div>
+
+            <!-- CPU Model -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">CPU Model</label>
+                <input type="text" id="cpuModel" placeholder="CPU model (Intel, AMD)"
+                       class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500">
+            </div>
+
+            <!-- Sorting -->
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sort By</label>
+                <select id="sortBy" class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white">
+                    <option value="created_at">Newest</option>
+                    <option value="price">Price</option>
+                    <option value="cpu_cores">CPU Cores</option>
+                    <option value="ram_gb">RAM</option>
+                    <option value="storage_gb">Storage</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Order</label>
+                <select id="sortOrder" class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white">
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                </select>
+            </div>
+
+            <button id="applyFilters" class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                Apply Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Area (Right) -->
+    <div class="lg:w-3/4">
+        <!--Tabs-->
+        <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400"
+                id="listingTabs" role="tablist">
+                <li class="mr-2">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white border-transparent hover:border-blue-600 dark:hover:border-blue-500 transition"
+                            id="all-listings-tab"
+                            data-tabs-target="#all-listings"
+                            type="button"
+                            role="tab"
+                            aria-controls="all-listings"
+                            aria-selected="true">
+                        All Listings
+                    </button>
+                </li>
+
+                {% if user %}
+                <li class="mr-2">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white border-transparent hover:border-blue-600 dark:hover:border-blue-500 transition"
+                            id="my-listings-tab"
+                            data-tabs-target="#my-listings"
+                            type="button"
+                            role="tab"
+                            aria-controls="my-listings"
+                            aria-selected="false">
+                        My Listings
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Results Info -->
+        <div id="filterResultsInfo" class="mb-4 hidden">
+            <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-blue-800 dark:text-blue-300 font-medium" id="resultsCount">0</span>
+                        <span class="text-blue-600 dark:text-blue-400 ml-1">results found</span>
+                    </div>
+                    <button id="clearActiveFilters" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                        Clear filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!--All Listings-->
+        <div id="all-listings" role="tabpanel" aria-labelledby="all-listings-tab">
+            <div id="listingsGrid" class="grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Listings will be loaded here via JS -->
+            </div>
+            <div id="noResults" class="hidden text-center py-12">
+                <p class="text-gray-500 dark:text-gray-400 text-lg">No listings found. Try adjusting your filters.</p>
+            </div>
+        </div>
+
+        <!--My Listings-->
+        {% if user %}
+        <div id="my-listings" class="hidden" role="tabpanel" aria-labelledby="my-listings-tab">
+            <div id="myListingsGrid" class="grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- My listings will be loaded here -->
+            </div>
+            <div id="noMyResults" class="hidden text-center py-12">
+                <p class="text-gray-500 dark:text-gray-400 text-lg">You haven't created any listings yet.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!--Detail Modal-->
+<div id="listingDetailsModal" tabindex="-1" aria-hidden="true"
+     class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 
+     justify-center items-center w-full md:inset-0 h-modal md:h-full">
+
+    <div class="relative p-4 w-full max-w-lg h-full md:h-auto">
+        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            
+            <!--Modal Header-->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 id="modalTitle" class="text-xl font-semibold text-gray-900 dark:text-white"></h3>
+                <button type="button"
+                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                        data-modal-hide="listingDetailsModal">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!--Modal Body-->
+            <div class="p-4 space-y-3">
+                <p id="modalDescription" class="text-gray-700 dark:text-gray-300"></p>
+
+                <div class="flex items-center gap-2">
+                    <span class="font-medium text-gray-800 dark:text-gray-200">Price:</span>
+                    <span id="modalPrice" class="text-blue-600 dark:text-blue-400 font-semibold"></span>
+                </div>
+
+                <div id="modalMeta" class="text-sm text-gray-500 dark:text-gray-400"></div>
+
+                <!-- Time Picker Section -->
+                <div class="mt-6">
+                    <h4 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Select Booking Time</h4>
+                    
+                    <!-- Date Picker -->
+                    <div class="mb-4">
+                        <label for="booking-date" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Select Date
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M5 5a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1h1a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1h1a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1 2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a2 2 0 0 1 2-2ZM3 19v-7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm6.01-6a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm2 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm-10 4a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <input 
+                                type="date" 
+                                id="booking-date" 
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                required
+                            />
+                        </div>
+                    </div>
+                    
+                    <!-- Time Pickers -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="start-time" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                Start Time
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                    </svg>
+                                </div>
+                                <input 
+                                    type="time" 
+                                    id="start-time" 
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    value="09:00"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label for="end-time" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                End Time
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                    </svg>
+                                </div>
+                                <input 
+                                    type="time" 
+                                    id="end-time" 
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    value="17:00"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Duration Display -->
+                    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Selected Duration:</span>
+                            <span id="duration-display" class="text-sm font-semibold text-blue-600 dark:text-blue-400">8 hours</span>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-600 dark:text-gray-400" id="total-price-display">
+                            Total: <span class="font-semibold">$360.00</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Time Picker Section -->
+            </div>
+
+            <!--Modal Footer-->
+            <div class="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
+                <button data-modal-hide="listingDetailsModal"
+                        class="mr-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                    Close
+                </button>
+
+                {% if user and user.role == "buyer" %}
+                <button id="modalBookButton"
+                        class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition">
+                    Request Booking
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="/static/js/listings.js"></script>
+{% endblock %}

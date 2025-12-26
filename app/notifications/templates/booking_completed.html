@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Booking Completed</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #222;">
+
+    <h2>Your Booking is Complete</h2>
+
+    <p>Hello {{ user.email }},</p>
+
+    <p>Your booking session has been successfully completed.</p>
+
+    <h3>Booking Details</h3>
+    <table cellpadding="6" style="border-collapse: collapse; border: 1px solid #ddd;">
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Booking ID:</strong></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{ booking.id }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Listing:</strong></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{ booking.listing_title or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Session Start:</strong></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{ booking.active_session_start }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Session End:</strong></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{ booking.active_session_end }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Total Usage:</strong></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">
+                {% if booking.usage_seconds %}
+                    {{ (booking.usage_seconds / 3600) | round(2) }} hours
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Final Charge:</strong></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">
+                {% if booking.actual_price_charged %}
+                    ${{ booking.actual_price_charged | round(2) }}
+                {% else %}
+                    ${{ booking.total_price_estimate | round(2) }} (estimated)
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <p>Thank you for using our platform! We hope to see you again soon.</p>
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+        <li>Your final invoice will be available in your account</li>
+        <li>Any remaining credentials have been revoked for security</li>
+        <li>You can download your usage reports from the booking details page</li>
+    </ul>
+
+    <p>If you have any questions about your usage or billing, please contact our support team.</p>
+
+</body>
+</html>

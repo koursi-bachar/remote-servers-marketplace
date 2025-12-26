@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title or "SuperVision Remote Servers" }}</title>
+    
+    <script>
+        // Apply saved theme on page load - default to dark mode
+        const userTheme = localStorage.getItem('theme');
+        
+        // Always default to dark mode if no theme is saved
+        if (userTheme === 'dark' || !userTheme) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    <!--Tailwind and Flowbite-->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.5.1/flowbite.min.css" rel="stylesheet">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.5.1/flowbite.min.js"></script>
+
+    <!--Supabase-->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!--Tailwind Dark Mode Setup-->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        };
+    </script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+<!--Navbar-->
+<header class="border-b bg-white dark:bg-gray-800 dark:border-gray-700">
+    <div class="mx-auto max-w-7xl flex items-center justify-between p-4">
+        <a href="/" class="text-xl font-semibold text-gray-900 dark:text-white">SuperVision Remote Servers</a>
+
+        <nav class="flex gap-5 text-sm items-center">
+
+            <!--Always visible-->
+            <a href="/listings" class="hover:text-gray-800 dark:hover:text-white">Listings</a>
+
+            {% if not user %}
+                <!--Anonymous user-->
+                <a href="/login" class="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Log in</a>
+                <a href="/signup"
+                   class="rounded-lg bg-blue-600 px-4 py-1.5 text-white hover:bg-blue-700 transition">
+                    Sign up
+                </a>
+
+            {% else %}
+
+                {% if user.role == "buyer" %}
+                    <a href="/bookings" class="hover:text-gray-800 dark:hover:text-white">Bookings</a>
+                    <a href="/dashboard" class="hover:text-gray-800 dark:hover:text-white">Dashboard</a>
+                {% elif user.role == "provider" %}
+                    <a href="/bookings" class="hover:text-gray-800 dark:hover:text-white">Bookings</a>
+                    <a href="/dashboard" class="hover:text-gray-800 dark:hover:text-white">Dashboard</a>
+                {% elif user.role == "admin" %}
+                    <a href="/bookings" class="hover:text-gray-800 dark:hover:text-white">All Bookings</a>
+                    <a href="/dashboard" class="hover:text-gray-800 dark:hover:text-white">Dashboard</a>
+                {% endif %}
+
+                <!--Client-side logout (wait Supabase and localStorage)-->
+                <button onclick="logoutUser()"
+                        class="text-red-600 hover:underline dark:text-red-400 dark:hover:text-red-300">
+                    Log out
+                </button>
+
+            {% endif %}
+            <button onclick="toggleTheme()" class="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors">
+                <!-- Moon icon - shown in light mode -->
+                <svg class="w-5 h-5 dark:hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                </svg>
+                
+                <!-- Sun icon - shown in dark mode -->
+                <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </nav>
+    </div>
+</header>
+
+<!--Main content-->
+<main class="mx-auto max-w-7xl p-6">
+    {% block content %}
+    {% endblock %}
+</main>
+
+<!--Footer content-->
+<footer class="py-8 text-center text-gray-500 text-sm dark:text-gray-400">
+    Remote Servers Marketplace — MVP v0.3
+</footer>
+
+<!--Load shared Supabase client-->
+<script type="module" src="/static/js/supabaseClient.js"></script>
+
+<script>
+    //Logs out client-side Supabase session
+    function logoutUser() {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user_role");
+        window.location.href = "/logout";
+    }
+</script>
+
+<script>
+    //Apply saved theme on page load
+
+    //Toggle handler
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isDark = html.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+</script>
+
+</body>
+</html>

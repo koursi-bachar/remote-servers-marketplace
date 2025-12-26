@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dispute Opened</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #222;">
+
+    <h2>A Dispute Has Been Opened</h2>
+
+    <p>Hello {{ user.full_name or user.email }},</p>
+
+    <p>A dispute has been opened regarding your booking.</p>
+
+    <h3>Dispute Details</h3>
+    <table cellpadding="6" style="border-collapse: collapse;">
+        <tr>
+            <td><strong>Dispute ID:</strong></td>
+            <td>{{ dispute.id }}</td>
+        </tr>
+        <tr>
+            <td><strong>Booking ID:</strong></td>
+            <td>{{ dispute.booking_id }}</td>
+        </tr>
+        <tr>
+            <td><strong>Reason:</strong></td>
+            <td>{{ dispute.reason }}</td>
+        </tr>
+    </table>
+
+    <p>Our team will review the dispute and contact you shortly.</p>
+
+</body>
+</html>

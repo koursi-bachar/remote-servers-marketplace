@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-md mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+    <h1 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Create an account</h1>
+
+    <form id="signup-form" class="space-y-4">
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="email">Email</label>
+            <input id="email" type="email" required
+                   class="mt-1 w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+        </div>
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="password">Password</label>
+            <input id="password" type="password" required
+                   class="mt-1 w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+        </div>
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="confirm">Confirm Password</label>
+            <input id="confirm" type="password" required
+                   class="mt-1 w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+        </div>
+
+        <!--Role selection (for initial simplified registration)-->
+        <fieldset>
+            <legend class="text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Account Type</legend>
+
+            <label class="flex items-center gap-2 mb-1 text-gray-700 dark:text-gray-300">
+                <input type="radio" name="role" value="buyer" checked class="accent-blue-600 dark:accent-blue-500">
+                <span>Buyer</span>
+            </label>
+
+            <label class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <input type="radio" name="role" value="provider" class="accent-blue-600 dark:accent-blue-500">
+                <span>Provider</span>
+            </label>
+        </fieldset>
+
+        <div id="signup-error" class="text-red-600 text-sm dark:text-red-400"></div>
+
+        <button class="w-full bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 transition">
+            Create Account
+        </button>
+    </form>
+</div>
+
+<script type="module" src="/static/js/signup.js"></script>
+
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <!-- Success Icon -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900 mb-4">
+            <svg class="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Payment Successful!
+        </h1>
+        <p class="text-gray-600 dark:text-gray-300">
+            Thank you for booking a server. Your payment has been confirmed.
+        </p>
+    </div>
+
+    <!-- Booking Details Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Booking Details
+        </h2>
+        
+        <div class="space-y-4">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Booking ID</p>
+                <p id="booking-id" class="font-mono text-lg font-medium text-gray-900 dark:text-white">
+                    Loading...
+                </p>
+            </div>
+            
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Amount Paid</p>
+                <p id="payment-amount" class="text-lg font-semibold text-green-600 dark:text-green-400">
+                    Loading...
+                </p>
+            </div>
+            
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                <span id="payment-status" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
+                    <span class="w-2 h-2 mr-2 rounded-full bg-green-500"></span>
+                    Payment Confirmed
+                </span>
+                <span id="booking-status" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 ml-2">
+                    <span class="w-2 h-2 mr-2 rounded-full bg-blue-500"></span>
+                    Processing...
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-xl p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            What happens next?
+        </h3>
+        <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+            <li class="flex items-start">
+                <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span id="step-1">Processing your booking request...</span>
+            </li>
+            <li class="flex items-start">
+                <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span id="step-2">You'll receive an email with booking confirmation</span>
+            </li>
+            <li class="flex items-start">
+                <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 01118 0z"></path>
+                </svg>
+                <span id="step-3">Once confirmed, you can view your bookings in the dashboard</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4">
+        <a href="/bookings" 
+           class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg text-center transition">
+            View My Bookings
+        </a>
+        <a href="/" 
+           class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium rounded-lg text-center transition">
+            Return to Home
+        </a>
+    </div>
+</div>
+
+<!-- JavaScript to parse URL parameters and confirm payment -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    const bookingId = urlParams.get('booking_id');
+    
+    // Update booking ID display
+    if (bookingId) {
+        document.getElementById('booking-id').textContent = bookingId;
+    } else {
+        document.getElementById('booking-id').textContent = 'Not available';
+    }
+    
+    // Set payment amount if available
+    const amount = urlParams.get('amount');
+    const currency = urlParams.get('currency') || 'USD';
+    if (amount) {
+        document.getElementById('payment-amount').textContent = 
+            `${parseFloat(amount).toFixed(2)} ${currency}`;
+    } else {
+        document.getElementById('payment-amount').textContent = 'Loading...';
+    }
+    
+    // Confirm payment and update booking status
+    if (bookingId) {
+        confirmBookingPayment(bookingId);
+    }
+    
+    // If we have a session ID, we could fetch payment details
+    if (sessionId) {
+        console.log('Payment session:', sessionId);
+    }
+});
+
+async function confirmBookingPayment(bookingId) {
+    try {
+        console.log('Confirming payment for booking:', bookingId);
+        
+        // Update step 1 to show processing
+        document.getElementById('step-1').innerHTML = `
+            <svg class="w-4 h-4 mr-2 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing your booking request...
+        `;
+        
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+        
+        const response = await fetch(`/api/v1/bookings/${bookingId}/confirm-payment`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            // Success - update UI
+            const data = await response.json();
+            
+            // Update booking status
+            document.getElementById('booking-status').innerHTML = `
+                <span class="w-2 h-2 mr-2 rounded-full bg-green-500"></span>
+                Booking Confirmed
+            `;
+            document.getElementById('booking-status').className = 
+                'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300';
+            
+            // Update step 1 to show success
+            document.getElementById('step-1').innerHTML = `
+                <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Your booking has been confirmed and sent to the provider
+            `;
+            
+            console.log('Booking payment confirmed:', data);
+            
+        } else {
+            const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(error.detail || 'Failed to confirm booking payment');
+        }
+        
+    } catch (error) {
+        console.error('Payment confirmation error:', error);
+        
+        // Update UI to show error
+        document.getElementById('booking-status').innerHTML = `
+            <span class="w-2 h-2 mr-2 rounded-full bg-yellow-500"></span>
+            Payment Verified - Manual Review Needed
+        `;
+        document.getElementById('booking-status').className = 
+            'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
+        
+        document.getElementById('step-1').innerHTML = `
+            <svg class="w-5 h-5 text-yellow-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            Payment received! Your booking is being processed.
+        `;
+        
+        // Show a subtle notification
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 z-50 p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-400 shadow-lg';
+        errorDiv.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <span class="font-medium">Note:</span> Payment verified. Booking may need manual review.
+            </div>
+        `;
+        
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
+    }
+}
+</script>
+{% endblock %}
