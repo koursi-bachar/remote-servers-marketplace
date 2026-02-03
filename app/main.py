@@ -83,6 +83,12 @@ templates = Jinja2Templates(directory=templates_dir)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
+# Define React build directory path
+REACT_BUILD_DIR = os.path.join(BASE_DIR, "frontend", "static", "react")
+react_build_exists = os.path.exists(REACT_BUILD_DIR)
+
+
+
 # Define the StoreSession class to store sessions and cookies
 class StoreSession(BaseModel):
     token: str
@@ -107,7 +113,19 @@ async def store_session(payload: StoreSession, response: Response):
 # Pages (Jinja2 templating)
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, user=Depends(optional_user)):
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+    return templates.TemplateResponse(
+        "index.html", 
+        {
+            "request": request, 
+            "user": user,
+            "react_enabled": react_build_exists  # Pass this flag to template
+        }
+    )
+
+# # Pages (Jinja2 templating)
+# @app.get("/", response_class=HTMLResponse)
+# async def home(request: Request, user=Depends(optional_user)):
+#     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 
 @app.get("/login", response_class=HTMLResponse)

@@ -1,1276 +1,1295 @@
 {% extends "base.html" %}
+
 {% block content %}
+<div class="py-6 px-6 md:py-8 md:px-8 lg:py-10 lg:px-10">
+    <h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
+        {% if user.role == "buyer" %}
+            Buyer Dashboard
+        {% elif user.role == "provider" %}
+            Provider Dashboard
+        {% elif user.role == "admin" %}
+            Admin Dashboard
+        {% endif %}
+    </h1>
 
-<h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-    {% if user.role == "buyer" %}
-        Buyer Dashboard
-    {% elif user.role == "provider" %}
-        Provider Dashboard
-    {% elif user.role == "admin" %}
-        Admin Dashboard
-    {% endif %}
-</h1>
+    {% if user.role == "provider" %}
 
-{% if user.role == "provider" %}
+    <!--Provider machine and listing controls-->
+    <div class="mb-8">
 
-<!--Provider machine and listing controls-->
-<div class="mb-8">
-
-    <!--Add Machine Button-->
-    <button
-        id="openCreateMachineModal"
-        data-modal-target="createMachineModal"
-        data-modal-toggle="createMachineModal"
-        class="inline-flex items-center gap-2 text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2">
-        + Add Machine
-    </button>
-
-    <!--Create listing button (initially disabled if no machines exist)-->
-    <button
-        id="openCreateListingModal"
-        data-modal-target="createListingModal"
-        data-modal-toggle="createListingModal"
-        class="ml-2 inline-flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed">
-        + Create Listing
-    </button>
-
-    <!--Warning when no machines exist-->
-    <div id="no-machines-warning" class="hidden mt-2 text-red-600 font-medium">
-        You must create a machine before you can create a listing.
-    </div>
-
-</div>
-
-{% endif %}
-
-
-{% if user.role == "admin" %}
-
-<!--Admin Provider Management Section-->
-<div class="mb-8">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Provider Management</h2>
-    </div>
-
-    <!--Admin Stats-->
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Total Providers</div>
-            <div id="stat-total-providers" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-        </div>
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Pending Verification</div>
-            <div id="stat-pending-verification" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-        </div>
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Verified Providers</div>
-            <div id="stat-verified-providers" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-        </div>
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Rejected Providers</div>
-            <div id="stat-rejected-providers" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-        </div>
-    </div>
-
-    <!--Provider List-->
-    <div id="providers-container" class="space-y-4">
-        <!-- Providers will be loaded here dynamically -->
-        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-            Loading providers...
-        </div>
-    </div>
-</div>
-
-
-<!-- Admin Wipe Attestations Management -->
-<div class="mb-8">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Wipe Attestations Management</h2>
-    </div>
-
-    <!-- Wipe Attestations List -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">All Wipe Attestations</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Review and verify server wipe attestations</p>
-        </div>
-        
-        <div id="attestations-container" class="p-6">
-            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                Loading wipe attestations...
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Wipe Attestation Template (Hidden) -->
-<template id="attestation-row-template">
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 hover:bg-gray-50 dark:hover:bg-gray-700">
-        <div class="flex justify-between items-start">
-            <div class="flex-1">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Booking</p>
-                        <p class="font-medium text-gray-900 dark:text-white booking-id">...</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Machine: <span class="machine-info">...</span></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Wipe Method</p>
-                        <p class="font-medium text-gray-900 dark:text-white wipe-method">...</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Attested: <span class="attested-date">...</span></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                        <span class="status-badge inline-block px-3 py-1 rounded-full text-xs font-medium mt-1"></span>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Evidence: <a href="#" target="_blank" class="evidence-link text-blue-600 dark:text-blue-400 hover:underline">View</a></p>
-                    </div>
-                </div>
-            </div>
-            <div class="ml-4 flex flex-col space-y-2">
-                <button class="verify-attestation-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
-                    Verify
-                </button>
-                <button class="reject-attestation-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
-                    Reject
-                </button>
-                <button class="view-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
-                    Details
-                </button>
-            </div>
-        </div>
-    </div>
-</template>
-
-<!-- Wipe Attestation Details Modal -->
-<div id="attestationDetailsModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-4xl">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Wipe Attestation Details
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="attestationDetailsModal">
-                    X
-                </button>
-            </div>
-            
-            <div id="attestationDetailsContent" class="p-6">
-                <div class="space-y-4">
-                    <!-- Details will be populated by JavaScript -->
-                    <div class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p class="mt-2 text-gray-500 dark:text-gray-400">Loading details...</p>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-</div>
-
-<!-- Provider Booking Attestation Modal -->
-<div id="providerBookingAttestationModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-4xl">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Wipe Attestation Details
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5 provider-attestation-close-btn">
-                    X
-                </button>
-            </div>
-            
-            <div id="providerBookingAttestationContent" class="p-6">
-                <div class="space-y-4">
-                    <!-- Content will be populated by JavaScript -->
-                    <div class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p class="mt-2 text-gray-500 dark:text-gray-400">Loading attestation details...</p>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-</div>
-
-<!--Provider Template (Hidden)-->
-<template id="provider-card-template">
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div class="flex justify-between items-start">
-            <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white provider-email">Provider Email</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 provider-id">ID: ...</p>
-                <div class="mt-2">
-                    <span class="provider-status-badge px-3 py-1 rounded-full text-xs font-medium"></span>
-                </div>
-                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 provider-created">Created: ...</p>
-            </div>
-            <div class="flex space-x-2">
-                <button class="verify-btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                    Verify
-                </button>
-                <button class="reject-btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                    Reject
-                </button>
-            </div>
-        </div>
-        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Verification History</h4>
-            <div class="verification-history space-y-2">
-                <!-- Verification history will be populated here -->
-            </div>
-        </div>
-    </div>
-</template>
-
-{% endif %}
-
-
-{% if user.role == "buyer" or user.role == "provider" %}
-<!--Stats(for buyers and providers)-->
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
-        <div id="stat-total" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-    </div>
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
-        <div id="stat-pending" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-    </div>
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
-        <div id="stat-active" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-    </div>
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
-        <div id="stat-past" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
-    </div>
-</div>
-{% endif %}
-
-{% if user.role == "buyer" %}
-<div class="mb-8" id="organizations-section">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">My Organizations</h2>
-        <button id="openCreateOrgModal"
-                data-modal-target="createOrgModal"
-                data-modal-toggle="createOrgModal"
-                class="inline-flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
-            + Create Organization
+        <!--Add Machine Button-->
+        <button
+            id="openCreateMachineModal"
+            data-modal-target="createMachineModal"
+            data-modal-toggle="createMachineModal"
+            class="inline-flex items-center gap-2 text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2">
+            + Add Machine
         </button>
-    </div>
-    
-    <!-- Organizations List -->
-    <div id="organizationsContainer" class="space-y-4">
-        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-            Loading organizations...
-        </div>
-    </div>
-</div>
 
-<!-- Organization Management Section (for org admins) -->
-<div id="orgManagementSection" class="mb-8 hidden">
-    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organization Management</h2>
-    
-    <!-- Selected Org Info -->
-    <div id="selectedOrgInfo" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
-        <!-- Will be populated when org is selected -->
+        <!--Create listing button (initially disabled if no machines exist)-->
+        <button
+            id="openCreateListingModal"
+            data-modal-target="createListingModal"
+            data-modal-toggle="createListingModal"
+            class="ml-2 inline-flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            + Create Listing
+        </button>
+
+        <!--Warning when no machines exist-->
+        <div id="no-machines-warning" class="hidden mt-2 text-red-600 font-medium">
+            You must create a machine before you can create a listing.
+        </div>
+
     </div>
-    
-    <!-- Tabs for Org Management -->
-    <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
-        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400"
-            id="orgManagementTabs">
-            <li class="mr-2">
-                <button class="org-management-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-                        data-tab="members"
-                        aria-selected="true">
-                    Members
-                </button>
-            </li>
-            <li class="mr-2">
-                <button class="org-management-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-                        data-tab="stats"
-                        aria-selected="false">
-                    Statistics
-                </button>
-            </li>
-            <!-- Remove invoices tab -->
-        </ul>
-    </div>
-    
-    <!-- Tab Content -->
-    <div id="orgManagementContent">
-        <div id="orgMembersTab" class="org-tab-content">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Organization Members</h3>
-                <button id="openAddMemberModal"
-                        data-modal-target="addMemberModal"
-                        data-modal-toggle="addMemberModal"
-                        class="inline-flex items-center gap-2 text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add Member
-                </button>
+
+    {% endif %}
+
+
+    {% if user.role == "admin" %}
+
+    <!--Admin Provider Management Section-->
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Provider Management</h2>
+        </div>
+
+        <!--Admin Stats-->
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Total Providers</div>
+                <div id="stat-total-providers" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
             </div>
-            <div id="orgMembersContainer" class="space-y-3">
-                <!-- Members will be loaded here -->
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Pending Verification</div>
+                <div id="stat-pending-verification" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Verified Providers</div>
+                <div id="stat-verified-providers" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Rejected Providers</div>
+                <div id="stat-rejected-providers" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
             </div>
         </div>
-        
-        <div id="orgStatsTab" class="org-tab-content hidden">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Organization Statistics</h3>
-            <div id="orgStatsContainer" class="space-y-3">
-                <!-- Stats will be loaded here -->
+
+        <!--Provider List-->
+        <div id="providers-container" class="space-y-4">
+            <!-- Providers will be loaded here dynamically -->
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                Loading providers...
             </div>
         </div>
     </div>
-</div>
 
 
-<!-- Add Member Modal -->
-<div id="addMemberModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Add Member to Organization
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="addMemberModal">
-                    X
-                </button>
+    <!-- Admin Wipe Attestations Management -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Wipe Attestations Management</h2>
+        </div>
+
+        <!-- Wipe Attestations List -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">All Wipe Attestations</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Review and verify server wipe attestations</p>
             </div>
             
-            <form id="add-member-form" class="p-6 space-y-4">
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User ID (UUID)</label>
-                    <input type="text" 
-                           name="user_id"
-                           id="addMemberUserId"
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="123e4567-e89b-12d3-a456-426614174000"
-                           required>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Enter the UUID of the user to add. User must already have an account.
-                    </p>
+            <div id="attestations-container" class="p-6">
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    Loading wipe attestations...
                 </div>
-                
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Role</label>
-                    <select name="role"
-                            id="addMemberRole"
-                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white">
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                
-                <input type="hidden" name="org_id" id="addMemberOrgId" value="">
-                
-                <button type="submit"
-                        class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
-                    Add Member
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-
-{% if user.role == "buyer" or user.role == "provider" %}
-<!--Tab Panels (for buyers and providers)-->
-<div class="mb-4 border-b border-gray-200 dark:border-gray-700">
-    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400"
-        data-tabs-toggle="#dashboardTabsContent"
-        role="tablist">
-
-        <li class="mr-2" role="presentation">
-            <button
-                class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-                id="pending-tab"
-                data-tabs-target="#pending"
-                type="button"
-                role="tab"
-                aria-controls="pending"
-                aria-selected="true">
-                Pending
-            </button>
-        </li>
-
-        <li class="mr-2" role="presentation">
-            <button
-                class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-                id="past-tab"
-                data-tabs-target="#past"
-                type="button"
-                role="tab"
-                aria-controls="past"
-                aria-selected="false">
-                Past
-            </button>
-        </li>
-
-    </ul>
-</div>
-
-<!--Tab Panels (for buyers and providers)-->
-<div id="dashboardTabsContent">
-
-    <!--Pending bookings-->
-    <div id="pending" role="tabpanel" aria-labelledby="pending-tab">
-        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                        <th class="px-6 py-3">Booking</th>
-                        <th class="px-6 py-3">Listing</th>
-                        <th class="px-6 py-3">User</th>
-                        <th class="px-6 py-3">Schedule</th>
-                        <th class="px-6 py-3">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="pendingBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!--Past bookings-->
-    <div id="past" class="hidden" role="tabpanel" aria-labelledby="past-tab">
-        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                        <th class="px-6 py-3">Booking</th>
-                        <th class="px-6 py-3">Listing</th>
-                        <th class="px-6 py-3">User</th>
-                        <th class="px-6 py-3">Schedule</th>
-                        <th class="px-6 py-3">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="pastBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
-{% endif %}
-
-
-{% if user.role == "provider" %}
-<!--PROVIDER: Create Listing Modal-->
-<div id="createListingModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Create a New Listing
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900"
-                        data-modal-hide="createListingModal">
-                    X
-                </button>
             </div>
-
-            <form id="create-listing-form" class="p-6 space-y-4">
-
-                <!--New machine select-->
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Machine</label>
-                    <select name="machine_id"
-                            id="machineSelect"
-                            required
-                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm rounded-lg block w-full p-2.5">
-                    </select>
-                        <!--populated dynamically by JS-->
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Title</label>
-                    <input name="title"
-                           type="text"
-                           required
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" />
-                </div>
-
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Price per hour</label>
-                    <input name="price"
-                           type="number"
-                           step="0.01"
-                           min="0"
-                           required
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" />
-                </div>
-
-                <button type="submit"
-                        class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
-                    Create Listing
-                </button>
-            </form>
-
         </div>
     </div>
-</div>
-{% endif %}
 
-<!-- Provider create machine modal -->
-{% if user.role == "provider" %}
-<div id="createMachineModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-
-    <div class="relative p-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Add Machine
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="createMachineModal">
-                    X
-                </button>
-            </div>
-
-            <form id="create-machine-form" class="p-6 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Basic Information -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white">Basic Information</h4>
-                        
+    <!-- Wipe Attestation Template (Hidden) -->
+    <template id="attestation-row-template">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hostname *</label>
-                            <input name="hostname"
-                                   type="text"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="server1.example.com" />
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Booking</p>
+                            <p class="font-medium text-gray-900 dark:text-white booking-id">...</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Machine: <span class="machine-info">...</span></p>
                         </div>
-
                         <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Location/Region *</label>
-                            <input name="location_region"
-                                   type="text"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="us-east-1, eu-west-3, etc." />
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Wipe Method</p>
+                            <p class="font-medium text-gray-900 dark:text-white wipe-method">...</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Attested: <span class="attested-date">...</span></p>
                         </div>
-
                         <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Notes</label>
-                            <textarea name="notes"
-                                      rows="2"
-                                      class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                      placeholder="Additional information about this machine"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- CPU Specifications -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white">CPU Specifications</h4>
-                        
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">CPU Model *</label>
-                            <input name="cpu_model"
-                                   type="text"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="Intel Xeon Platinum 8480C, AMD EPYC 9754, etc." />
-                        </div>
-
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">CPU Cores *</label>
-                            <input name="cpu_cores"
-                                   type="number"
-                                   min="1"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="64" />
-                        </div>
-
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">RAM (GB) *</label>
-                            <input name="ram_gb"
-                                   type="number"
-                                   min="1"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="256" />
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                            <span class="status-badge inline-block px-3 py-1 rounded-full text-xs font-medium mt-1"></span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Evidence: <a href="#" target="_blank" class="evidence-link text-blue-600 dark:text-blue-400 hover:underline">View</a></p>
                         </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- GPU Specifications -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white">GPU Specifications</h4>
-                        
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">GPU Model *</label>
-                            <input name="gpu_model"
-                                   type="text"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="NVIDIA A100, AMD MI250X, etc." />
-                        </div>
-
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">GPU Count *</label>
-                            <input name="gpu_count"
-                                   type="number"
-                                   min="0"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="8" />
-                        </div>
-
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VRAM per GPU (GB) *</label>
-                            <input name="vram_gb"
-                                   type="number"
-                                   min="0"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="40" />
-                        </div>
-                    </div>
-
-                    <!-- Storage & Network -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white">Storage & Network</h4>
-                        
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Storage (GB) *</label>
-                            <input name="storage_gb"
-                                   type="number"
-                                   min="1"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="2000" />
-                        </div>
-
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Network Bandwidth (Mbps) *</label>
-                            <input name="network_mbps"
-                                   type="number"
-                                   min="1"
-                                   required
-                                   class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
-                                   placeholder="10000" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <button type="submit"
-                            class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
-                        Create Machine
+                <div class="ml-4 flex flex-col space-y-2">
+                    <button class="verify-attestation-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                        Verify
+                    </button>
+                    <button class="reject-attestation-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                        Reject
+                    </button>
+                    <button class="view-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                        Details
                     </button>
                 </div>
-            </form>
-
+            </div>
         </div>
-    </div>
-</div>
-{% endif %}
+    </template>
 
-<!-- Add Benchmarks Section for Providers -->
-{% if user.role == "provider" %}
-<div class="mb-8">
-    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Machine Benchmarks</h2>
-    
-    <!-- Machine Selection for Benchmarks -->
-    <div class="mb-4">
-        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select Machine</label>
-        <select id="benchmarkMachineSelect" 
-                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full md:w-1/3 p-2.5 text-gray-900 dark:text-white">
-            <option value="">Choose a machine...</option>
-            <!-- Will be populated by JavaScript -->
-        </select>
-    </div>
-
-    <!-- Add Benchmark Button (disabled until machine selected) -->
-    <button id="openAddBenchmarkModal"
-            data-modal-target="addBenchmarkModal"
-            data-modal-toggle="addBenchmarkModal"
-            class="inline-flex items-center gap-2 text-white bg-purple-600 hover:bg-purple-700 font-medium rounded-lg text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled>
-        + Add Benchmark
-    </button>
-
-    <!-- Benchmarks List (will be populated when machine is selected) -->
-    <div id="benchmarksList" class="mt-6 space-y-4 hidden">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Benchmarks for <span id="selectedMachineName"></span></h3>
-        <div id="benchmarksContainer" class="space-y-3">
-            <!-- Benchmarks will be loaded here -->
-        </div>
-    </div>
-</div>
-
-<!-- Provider Wipe Attestations -->
-<div class="mb-8">
-    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Wipe Attestations</h2>
-    
-    <!-- Machine Selection for Wipe History -->
-    <div class="mb-4">
-        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select Machine for Wipe History</label>
-        <select id="wipeHistoryMachineSelect" 
-                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full md:w-1/3 p-2.5 text-gray-900 dark:text-white">
-            <option value="">Choose a machine...</option>
-            <!-- Will be populated by JavaScript -->
-        </select>
-    </div>
-    
-    <!-- Wipe History (will be populated when machine is selected) -->
-    <div id="wipeHistoryList" class="mt-6 space-y-4 hidden">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Wipe History for <span id="selectedWipeMachineName"></span></h3>
-        <div id="wipeHistoryContainer" class="space-y-3">
-            <!-- Wipe attestations will be loaded here -->
-        </div>
-    </div>
-</div>
-
-<!-- Provider Wipe History Template -->
-<template id="wipe-history-template">
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div class="flex justify-between items-start">
-            <div class="flex-1">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Booking</p>
-                        <p class="font-medium text-gray-900 dark:text-white">#<span class="booking-id">...</span></p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 buyer-email-container">Buyer: <span class="buyer-email">...</span></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Wipe Details</p>
-                        <p class="font-medium text-gray-900 dark:text-white wipe-method">...</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Date: <span class="attested-date">...</span></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                        <span class="status-badge inline-block px-3 py-1 rounded-full text-xs font-medium mt-1"></span>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 evidence-link-container hidden">
-                            Evidence: <a href="#" target="_blank" class="evidence-link text-blue-600 dark:text-blue-400 hover:underline">View</a>
-                        </p>
-                    </div>
+    <!-- Wipe Attestation Details Modal -->
+    <div id="attestationDetailsModal"
+        data-modal-target="attestationDetailsModal"
+        data-modal-toggle="attestationDetailsModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-4xl">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Wipe Attestation Details
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="attestationDetailsModal">
+                        X
+                    </button>
                 </div>
-            </div>
-            <button class="ml-4 view-attestation-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition"
-                    data-attestation-id="">
-                View Details
-            </button>
-        </div>
-    </div>
-</template>
-{% endif %}
-
-
-<!-- Access Credentials Modal -->
-<div id="credentialsModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-
-    <div class="relative p-4 w-full max-w-lg">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Access Credentials
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="credentialsModal">
-                    X
-                </button>
-            </div>
-
-            <div class="p-6">
-                <div class="space-y-4">
-                    <!-- VPN Configuration -->
-                    <div>
-                        <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-2">VPN Configuration</h4>
-                        <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                                Download the VPN configuration file to establish a secure connection to your server.
-                            </p>
-                            <a id="vpnDownloadLink"
-                               class="inline-flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2.5 transition"
-                               href="#"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                                Download VPN Configuration
-                            </a>
+                
+                <div id="attestationDetailsContent" class="p-6">
+                    <div class="space-y-4">
+                        <!-- Details will be populated by JavaScript -->
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            <p class="mt-2 text-gray-500 dark:text-gray-400">Loading details...</p>
                         </div>
                     </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
 
-                    <!-- SSH Key Information -->
-                    <div>
-                        <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-2">SSH Access</h4>
-                        <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SSH Public Key Fingerprint:</p>
-                            <div class="flex items-center justify-between">
-                                <code id="sshFingerprint" class="text-sm font-mono bg-gray-800 text-gray-100 dark:bg-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg break-all"></code>
-                                <button id="copySshFingerprintBtn"
-                                        class="ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
-                                    Copy
-                                </button>
-                            </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                                Use this fingerprint to verify the server's SSH host key when connecting.
-                            </p>
+    <!-- Provider Booking Attestation Modal -->
+    <div id="providerBookingAttestationModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-4xl">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Wipe Attestation Details
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5 provider-attestation-close-btn">
+                        X
+                    </button>
+                </div>
+                
+                <div id="providerBookingAttestationContent" class="p-6">
+                    <div class="space-y-4">
+                        <!-- Content will be populated by JavaScript -->
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            <p class="mt-2 text-gray-500 dark:text-gray-400">Loading attestation details...</p>
                         </div>
                     </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
 
-                    <!-- Connection Instructions -->
-                    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-2">Connection Instructions</h4>
-                        <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <li>Download and import the VPN configuration file</li>
-                            <li>Connect to the VPN network</li>
-                            <li>SSH to the server using the provided credentials</li>
-                            <li>Verify the SSH key fingerprint matches the one shown above</li>
-                        </ol>
+    <!--Provider Template (Hidden)-->
+    <template id="provider-card-template">
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white provider-email">Provider Email</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 provider-id">ID: ...</p>
+                    <div class="mt-2">
+                        <span class="provider-status-badge px-3 py-1 rounded-full text-xs font-medium"></span>
                     </div>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 provider-created">Created: ...</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="verify-btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Verify
+                    </button>
+                    <button class="reject-btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Reject
+                    </button>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Verification History</h4>
+                <div class="verification-history space-y-2">
+                    <!-- Verification history will be populated here -->
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </template>
+
+    {% endif %}
 
 
-<!-- Wipe Verification Modal -->
-<div id="wipeVerificationModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-lg">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Server Wipe Verification
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="wipeVerificationModal">
-                    X
-                </button>
-            </div>
-            
-            <div class="p-6">
-                <div id="wipeVerificationContent" class="space-y-4">
-                    <!-- Content will be populated by JavaScript -->
-                    <div class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p class="mt-2 text-gray-500 dark:text-gray-400">Loading verification details...</p>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-</div>
-
-
-<!-- Add Benchmark Modal -->
-{% if user.role == "provider" %}
-<div id="addBenchmarkModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Add Benchmark
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="addBenchmarkModal">
-                    X
-                </button>
-            </div>
-
-            <form id="add-benchmark-form" class="p-6 space-y-4">
-                <!-- Hidden machine ID -->
-                <input type="hidden" id="benchmarkMachineId" name="machine_id">
-                
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Benchmark Name *</label>
-                    <input name="name"
-                           type="text"
-                           required
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="e.g., Geekbench 6, 3DMark Time Spy, MLPerf">
-                </div>
-
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Score *</label>
-                    <input name="score"
-                           type="text"
-                           required
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="e.g., 25000, 98th percentile, 4.2 TFLOPS">
-                </div>
-
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Methodology URI (Optional)</label>
-                    <input name="methodology_uri"
-                           type="url"
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="https://example.com/methodology">
-                </div>
-
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Artifact URI (Optional)</label>
-                    <input name="artifact_uri"
-                           type="url"
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="https://example.com/artifact">
-                </div>
-
-                <button type="submit"
-                        class="w-full text-white bg-purple-600 hover:bg-purple-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
-                    Add Benchmark
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-
-<!-- Create Organization Modal -->
-{% if user.role == "buyer" %}
-<div id="createOrgModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Create Organization
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="createOrgModal">
-                    X
-                </button>
-            </div>
-            
-            <form id="create-org-form" class="p-6 space-y-4">
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Organization Name *</label>
-                    <input name="name"
-                           type="text"
-                           required
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="e.g., Stanford AI Research Lab" />
-                </div>
-                
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Billing Email *</label>
-                    <input name="billing_email"
-                           type="email"
-                           required
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                           placeholder="billing@university.edu" />
-                </div>
-                
-                <div class="pt-2">
-                    <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="institutional_billing" class="sr-only peer" checked>
-                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                        <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable institutional billing (invoices/POs)</span>
-                    </label>
-                </div>
-                
-                <button type="submit"
-                        class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
-                    Create Organization
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-{% endif %}
-
-
-<!-- Admin: Disputes Management Section -->
-{% if user.role == "admin" %}
-<div class="mb-8">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Disputes Management</h2>
-    </div>
-
-    <!-- Dispute Stats -->
+    {% if user.role == "buyer" or user.role == "provider" %}
+    <!--Stats(for buyers and providers)-->
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Open Disputes</div>
-            <div id="stat-open-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
+            <div id="stat-total" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">In Review</div>
-            <div id="stat-review-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
+            <div id="stat-pending" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Needs Info</div>
-            <div id="stat-needs-info-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
+            <div id="stat-active" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <div class="text-sm text-gray-500 dark:text-gray-400">Resolved</div>
-            <div id="stat-resolved-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Total Bookings</div>
+            <div id="stat-past" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == "buyer" %}
+    <div class="mb-8" id="organizations-section">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">My Organizations</h2>
+            <button id="openCreateOrgModal"
+                    data-modal-target="createOrgModal"
+                    data-modal-toggle="createOrgModal"
+                    class="inline-flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
+                + Create Organization
+            </button>
+        </div>
+        
+        <!-- Organizations List -->
+        <div id="organizationsContainer" class="space-y-4">
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                Loading organizations...
+            </div>
         </div>
     </div>
 
-    <!-- Disputes List -->
-    <div id="disputes-container" class="space-y-4">
-        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-            Loading disputes...
+    <!-- Organization Management Section (for org admins) -->
+    <div id="orgManagementSection" class="mb-8 hidden">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Organization Management</h2>
+        
+        <!-- Selected Org Info -->
+        <div id="selectedOrgInfo" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
+            <!-- Will be populated when org is selected -->
         </div>
-    </div>
-</div>
-
-<!-- Dispute Details Modal -->
-<div id="disputeDetailsModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-4xl">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Dispute Details
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="disputeDetailsModal">
-                    X
-                </button>
+        
+        <!-- Tabs for Org Management -->
+        <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400"
+                id="orgManagementTabs">
+                <li class="mr-2">
+                    <button class="org-management-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                            data-tab="members"
+                            aria-selected="true">
+                        Members
+                    </button>
+                </li>
+                <li class="mr-2">
+                    <button class="org-management-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                            data-tab="stats"
+                            aria-selected="false">
+                        Statistics
+                    </button>
+                </li>
+                <!-- Remove invoices tab -->
+            </ul>
+        </div>
+        
+        <!-- Tab Content -->
+        <div id="orgManagementContent">
+            <div id="orgMembersTab" class="org-tab-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Organization Members</h3>
+                    <button id="openAddMemberModal"
+                            data-modal-target="addMemberModal"
+                            data-modal-toggle="addMemberModal"
+                            class="inline-flex items-center gap-2 text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Member
+                    </button>
+                </div>
+                <div id="orgMembersContainer" class="space-y-3">
+                    <!-- Members will be loaded here -->
+                </div>
             </div>
             
-            <div id="disputeDetailsContent" class="p-6">
-                <div class="space-y-4">
-                    <!-- Details will be populated by JavaScript -->
-                    <div class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p class="mt-2 text-gray-500 dark:text-gray-400">Loading dispute details...</p>
-                    </div>
+            <div id="orgStatsTab" class="org-tab-content hidden">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Organization Statistics</h3>
+                <div id="orgStatsContainer" class="space-y-3">
+                    <!-- Stats will be loaded here -->
                 </div>
             </div>
-            
         </div>
     </div>
-</div>
 
-<!-- Dispute Resolution Modal -->
-<div id="disputeResolutionModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Resolve Dispute
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="disputeResolutionModal">
-                    X
-                </button>
-            </div>
-            
-            <form id="dispute-resolution-form" class="p-6 space-y-4">
-                <input type="hidden" id="disputeResolutionId" name="dispute_id">
-                
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Decision *</label>
-                    <select name="decision"
-                            id="disputeDecision"
-                            required
-                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white">
-                        <option value="">Select a decision...</option>
-                        <option value="refund">Refund (Full Refund)</option>
-                        <option value="deny">Deny (No Action)</option>
-                    </select>
-                </div>
-                
-                <div id="refundAmountContainer" class="hidden">
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Refund Amount</label>
-                    <input type="number"
-                           name="refund_amount"
-                           id="disputeRefundAmount"
-                           step="0.01"
-                           min="0.01"
-                           class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white"
-                           placeholder="0.00">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Enter refund amount. For full refunds, this will be automatically calculated.
-                    </p>
-                </div>
-                
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Resolution Notes *</label>
-                    <textarea name="resolution_notes"
-                              id="disputeResolutionNotes"
-                              rows="3"
-                              required
-                              class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white"
-                              placeholder="Explain your decision..."></textarea>
-                </div>
-                
-                <button type="submit"
-                        class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
-                    Submit Resolution
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- Dispute Template (Hidden) -->
-<template id="dispute-row-template">
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 hover:bg-gray-50 dark:hover:bg-gray-700">
-        <div class="flex justify-between items-start">
-            <div class="flex-1">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Add Member Modal -->
+    <div id="addMemberModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-md">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Add Member to Organization
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="addMemberModal">
+                        X
+                    </button>
+                </div>
+                
+                <form id="add-member-form" class="p-6 space-y-4">
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Booking</p>
-                        <p class="font-medium text-gray-900 dark:text-white dispute-booking-id">...</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Opened by: <span class="dispute-opened-by">...</span></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Reason</p>
-                        <p class="font-medium text-gray-900 dark:text-white dispute-reason truncate">...</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Opened: <span class="dispute-created">...</span></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                        <span class="status-badge inline-block px-3 py-1 rounded-full text-xs font-medium mt-1"></span>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="dispute-resolved-info">
-                            <!-- Will show resolution details if resolved -->
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User ID (UUID)</label>
+                        <input type="text" 
+                            name="user_id"
+                            id="addMemberUserId"
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="123e4567-e89b-12d3-a456-426614174000"
+                            required>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Enter the UUID of the user to add. User must already have an account.
                         </p>
                     </div>
-                </div>
-            </div>
-            <div class="ml-4 flex flex-col space-y-2">
-                <button class="view-dispute-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
-                    Details
-                </button>
-                <button class="resolve-dispute-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
-                    Resolve
-                </button>
-                <button class="close-dispute-btn bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
-                    Close
-                </button>
+                    
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Role</label>
+                        <select name="role"
+                                id="addMemberRole"
+                                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white">
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    
+                    <input type="hidden" name="org_id" id="addMemberOrgId" value="">
+                    
+                    <button type="submit"
+                            class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                        Add Member
+                    </button>
+                </form>
             </div>
         </div>
     </div>
-</template>
-{% endif %}
+    {% endif %}
 
-<!-- Open Dispute Modal (for buyers) -->
-{% if user.role == "buyer" %}
-<div id="openDisputeModal"
-     tabindex="-1"
-     aria-hidden="true"
-     class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
-     
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Open Dispute
-                </h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
-                        data-modal-hide="openDisputeModal">
-                    X
+
+    {% if user.role == "buyer" or user.role == "provider" %}
+    <!--Tab Panels (for buyers and providers)-->
+    <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400"
+            data-tabs-toggle="#dashboardTabsContent"
+            role="tablist">
+
+            <li class="mr-2" role="presentation">
+                <button
+                    class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="pending-tab"
+                    data-tabs-target="#pending"
+                    type="button"
+                    role="tab"
+                    aria-controls="pending"
+                    aria-selected="true">
+                    Pending
                 </button>
+            </li>
+
+            <li class="mr-2" role="presentation">
+                <button
+                    class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="past-tab"
+                    data-tabs-target="#past"
+                    type="button"
+                    role="tab"
+                    aria-controls="past"
+                    aria-selected="false">
+                    Past
+                </button>
+            </li>
+
+        </ul>
+    </div>
+
+    <!--Tab Panels (for buyers and providers)-->
+    <div id="dashboardTabsContent">
+
+        <!--Pending bookings-->
+        <div id="pending" role="tabpanel" aria-labelledby="pending-tab">
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                        <tr>
+                            <th class="px-6 py-3">Booking</th>
+                            <th class="px-6 py-3">Listing</th>
+                            <th class="px-6 py-3">User</th>
+                            <th class="px-6 py-3">Schedule</th>
+                            <th class="px-6 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingBody"></tbody>
+                </table>
             </div>
-            
-            <form id="open-dispute-form" class="p-6 space-y-4">
-                <input type="hidden" id="disputeBookingId" name="booking_id">
+        </div>
+
+        <!--Past bookings-->
+        <div id="past" class="hidden" role="tabpanel" aria-labelledby="past-tab">
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                        <tr>
+                            <th class="px-6 py-3">Booking</th>
+                            <th class="px-6 py-3">Listing</th>
+                            <th class="px-6 py-3">User</th>
+                            <th class="px-6 py-3">Schedule</th>
+                            <th class="px-6 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pastBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    {% endif %}
+
+
+    {% if user.role == "provider" %}
+    <!--PROVIDER: Create Listing Modal-->
+    <div id="createListingModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+
+        <div class="relative p-4 w-full max-w-md">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
                 
-                <div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        Opening a dispute for booking: <span id="disputeBookingInfo" class="font-medium">...</span>
-                    </p>
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Create a New Listing
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900"
+                            data-modal-hide="createListingModal">
+                        X
+                    </button>
                 </div>
-                
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Reason *</label>
-                    <textarea name="reason"
-                              id="disputeReason"
-                              rows="4"
-                              required
-                              class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white"
-                              placeholder="Describe the issue with this booking..."></textarea>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Please be specific about what went wrong. This helps us resolve the issue faster.
-                    </p>
-                </div>
-                
-                <button type="submit"
-                        class="w-full text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
-                    Open Dispute
-                </button>
-            </form>
+
+                <form id="create-listing-form" class="p-6 space-y-4">
+
+                    <!--New machine select-->
+                    <div>
+                        <label class="block mb-2 text-sm font-medium">Machine</label>
+                        <select name="machine_id"
+                                id="machineSelect"
+                                required
+                                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm rounded-lg block w-full p-2.5">
+                        </select>
+                            <!--populated dynamically by JS-->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium">Title</label>
+                        <input name="title"
+                            type="text"
+                            required
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" />
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium">Price per hour</label>
+                        <input name="price"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            required
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" />
+                    </div>
+
+                    <button type="submit"
+                            class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2">
+                        Create Listing
+                    </button>
+                </form>
+
+            </div>
         </div>
     </div>
+    {% endif %}
+
+    <!-- Provider create machine modal -->
+    {% if user.role == "provider" %}
+    <div id="createMachineModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+
+        <div class="relative p-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Add Machine
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="createMachineModal">
+                        X
+                    </button>
+                </div>
+
+                <form id="create-machine-form" class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Basic Information -->
+                        <div class="space-y-4">
+                            <h4 class="text-md font-medium text-gray-900 dark:text-white">Basic Information</h4>
+                            
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hostname *</label>
+                                <input name="hostname"
+                                    type="text"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="server1.example.com" />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Location/Region *</label>
+                                <input name="location_region"
+                                    type="text"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="us-east-1, eu-west-3, etc." />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Notes</label>
+                                <textarea name="notes"
+                                        rows="2"
+                                        class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                        placeholder="Additional information about this machine"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- CPU Specifications -->
+                        <div class="space-y-4">
+                            <h4 class="text-md font-medium text-gray-900 dark:text-white">CPU Specifications</h4>
+                            
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">CPU Model *</label>
+                                <input name="cpu_model"
+                                    type="text"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="Intel Xeon Platinum 8480C, AMD EPYC 9754, etc." />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">CPU Cores *</label>
+                                <input name="cpu_cores"
+                                    type="number"
+                                    min="1"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="64" />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">RAM (GB) *</label>
+                                <input name="ram_gb"
+                                    type="number"
+                                    min="1"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="256" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- GPU Specifications -->
+                        <div class="space-y-4">
+                            <h4 class="text-md font-medium text-gray-900 dark:text-white">GPU Specifications</h4>
+                            
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">GPU Model *</label>
+                                <input name="gpu_model"
+                                    type="text"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="NVIDIA A100, AMD MI250X, etc." />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">GPU Count *</label>
+                                <input name="gpu_count"
+                                    type="number"
+                                    min="0"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="8" />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VRAM per GPU (GB) *</label>
+                                <input name="vram_gb"
+                                    type="number"
+                                    min="0"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="40" />
+                            </div>
+                        </div>
+
+                        <!-- Storage & Network -->
+                        <div class="space-y-4">
+                            <h4 class="text-md font-medium text-gray-900 dark:text-white">Storage & Network</h4>
+                            
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Storage (GB) *</label>
+                                <input name="storage_gb"
+                                    type="number"
+                                    min="1"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="2000" />
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Network Bandwidth (Mbps) *</label>
+                                <input name="network_mbps"
+                                    type="number"
+                                    min="1"
+                                    required
+                                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" 
+                                    placeholder="10000" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button type="submit"
+                                class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                            Create Machine
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Add Benchmarks Section for Providers -->
+    {% if user.role == "provider" %}
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Machine Benchmarks</h2>
+        
+        <!-- Machine Selection for Benchmarks -->
+        <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select Machine</label>
+            <select id="benchmarkMachineSelect" 
+                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full md:w-1/3 p-2.5 text-gray-900 dark:text-white">
+                <option value="">Choose a machine...</option>
+                <!-- Will be populated by JavaScript -->
+            </select>
+        </div>
+
+        <!-- Add Benchmark Button (disabled until machine selected) -->
+        <button id="openAddBenchmarkModal"
+                data-modal-target="addBenchmarkModal"
+                data-modal-toggle="addBenchmarkModal"
+                class="inline-flex items-center gap-2 text-white bg-purple-600 hover:bg-purple-700 font-medium rounded-lg text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+            + Add Benchmark
+        </button>
+
+        <!-- Benchmarks List (will be populated when machine is selected) -->
+        <div id="benchmarksList" class="mt-6 space-y-4 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Benchmarks for <span id="selectedMachineName"></span></h3>
+            <div id="benchmarksContainer" class="space-y-3">
+                <!-- Benchmarks will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Provider Wipe Attestations -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Wipe Attestations</h2>
+        
+        <!-- Machine Selection for Wipe History -->
+        <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select Machine for Wipe History</label>
+            <select id="wipeHistoryMachineSelect" 
+                    class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full md:w-1/3 p-2.5 text-gray-900 dark:text-white">
+                <option value="">Choose a machine...</option>
+                <!-- Will be populated by JavaScript -->
+            </select>
+        </div>
+        
+        <!-- Wipe History (will be populated when machine is selected) -->
+        <div id="wipeHistoryList" class="mt-6 space-y-4 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Wipe History for <span id="selectedWipeMachineName"></span></h3>
+            <div id="wipeHistoryContainer" class="space-y-3">
+                <!-- Wipe attestations will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Provider Wipe History Template -->
+    <template id="wipe-history-template">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Booking</p>
+                            <p class="font-medium text-gray-900 dark:text-white">#<span class="booking-id">...</span></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 buyer-email-container">Buyer: <span class="buyer-email">...</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Wipe Details</p>
+                            <p class="font-medium text-gray-900 dark:text-white wipe-method">...</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Date: <span class="attested-date">...</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                            <span class="status-badge inline-block px-3 py-1 rounded-full text-xs font-medium mt-1"></span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 evidence-link-container hidden">
+                                Evidence: <a href="#" target="_blank" class="evidence-link text-blue-600 dark:text-blue-400 hover:underline">View</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <button class="ml-4 view-attestation-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition"
+                        data-attestation-id="">
+                    View Details
+                </button>
+            </div>
+        </div>
+    </template>
+    {% endif %}
+
+
+    <!-- Access Credentials Modal -->
+    <div id="credentialsModal"
+
+        data-modal-target="credentialsModal"
+        data-modal-toggle="credentialsModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+
+        <div class="relative p-4 w-full max-w-lg">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Access Credentials
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="credentialsModal">
+                        X
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <!-- VPN Configuration -->
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-2">VPN Configuration</h4>
+                            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                    Download the VPN configuration file to establish a secure connection to your server.
+                                </p>
+                                <a id="vpnDownloadLink"
+                                class="inline-flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2.5 transition"
+                                href="#"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Download VPN Configuration
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- SSH Key Information -->
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-2">SSH Access</h4>
+                            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SSH Public Key Fingerprint:</p>
+                                <div class="flex items-center justify-between">
+                                    <code id="sshFingerprint" class="text-sm font-mono bg-gray-800 text-gray-100 dark:bg-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg break-all"></code>
+                                    <button id="copySshFingerprintBtn"
+                                            class="ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                                        Copy
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                                    Use this fingerprint to verify the server's SSH host key when connecting.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Connection Instructions -->
+                        <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-2">Connection Instructions</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                <li>Download and import the VPN configuration file</li>
+                                <li>Connect to the VPN network</li>
+                                <li>SSH to the server using the provided credentials</li>
+                                <li>Verify the SSH key fingerprint matches the one shown above</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Wipe Verification Modal -->
+    <div id="wipeVerificationModal"
+
+        data-modal-target="wipeVerificationModal"
+        data-modal-toggle="wipeVerificationModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-lg">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Server Wipe Verification
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="wipeVerificationModal">
+                        X
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div id="wipeVerificationContent" class="space-y-4">
+                        <!-- Content will be populated by JavaScript -->
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            <p class="mt-2 text-gray-500 dark:text-gray-400">Loading verification details...</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Add Benchmark Modal -->
+    {% if user.role == "provider" %}
+    <div id="addBenchmarkModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+
+        <div class="relative p-4 w-full max-w-md">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Add Benchmark
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="addBenchmarkModal">
+                        X
+                    </button>
+                </div>
+
+                <form id="add-benchmark-form" class="p-6 space-y-4">
+                    <!-- Hidden machine ID -->
+                    <input type="hidden" id="benchmarkMachineId" name="machine_id">
+                    
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Benchmark Name *</label>
+                        <input name="name"
+                            type="text"
+                            required
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="e.g., Geekbench 6, 3DMark Time Spy, MLPerf">
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Score *</label>
+                        <input name="score"
+                            type="text"
+                            required
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="e.g., 25000, 98th percentile, 4.2 TFLOPS">
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Methodology URI (Optional)</label>
+                        <input name="methodology_uri"
+                            type="url"
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="https://example.com/methodology">
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Artifact URI (Optional)</label>
+                        <input name="artifact_uri"
+                            type="url"
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="https://example.com/artifact">
+                    </div>
+
+                    <button type="submit"
+                            class="w-full text-white bg-purple-600 hover:bg-purple-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                        Add Benchmark
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- Create Organization Modal -->
+    {% if user.role == "buyer" %}
+    <div id="createOrgModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-md">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Create Organization
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="createOrgModal">
+                        X
+                    </button>
+                </div>
+                
+                <form id="create-org-form" class="p-6 space-y-4">
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Organization Name *</label>
+                        <input name="name"
+                            type="text"
+                            required
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="e.g., Stanford AI Research Lab" />
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Billing Email *</label>
+                        <input name="billing_email"
+                            type="email"
+                            required
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                            placeholder="billing@university.edu" />
+                    </div>
+                    
+                    <div class="pt-2">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="institutional_billing" class="sr-only peer" checked>
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable institutional billing (invoices/POs)</span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit"
+                            class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                        Create Organization
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+
+    <!-- Admin: Disputes Management Section -->
+    {% if user.role == "admin" %}
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Disputes Management</h2>
+        </div>
+
+        <!-- Dispute Stats -->
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Open Disputes</div>
+                <div id="stat-open-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">In Review</div>
+                <div id="stat-review-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Needs Info</div>
+                <div id="stat-needs-info-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Resolved</div>
+                <div id="stat-resolved-disputes" class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">0</div>
+            </div>
+        </div>
+
+        <!-- Disputes List -->
+        <div id="disputes-container" class="space-y-4">
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                Loading disputes...
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispute Details Modal -->
+    <div id="disputeDetailsModal"
+        data-modal-target="disputeDetailsModal"
+        data-modal-toggle="disputeDetailsModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-4xl">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Dispute Details
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="disputeDetailsModal">
+                        X
+                    </button>
+                </div>
+                
+                <div id="disputeDetailsContent" class="p-6">
+                    <div class="space-y-4">
+                        <!-- Details will be populated by JavaScript -->
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            <p class="mt-2 text-gray-500 dark:text-gray-400">Loading dispute details...</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispute Resolution Modal -->
+    <div id="disputeResolutionModal"
+        data-modal-target="disputeResolutionModal"
+        data-modal-toggle="disputeResolutionModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-md">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Resolve Dispute
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="disputeResolutionModal">
+                        X
+                    </button>
+                </div>
+                
+                <form id="dispute-resolution-form" class="p-6 space-y-4">
+                    <input type="hidden" id="disputeResolutionId" name="dispute_id">
+                    
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Decision *</label>
+                        <select name="decision"
+                                id="disputeDecision"
+                                required
+                                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white">
+                            <option value="">Select a decision...</option>
+                            <option value="refund">Refund (Full Refund)</option>
+                            <option value="deny">Deny (No Action)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="refundAmountContainer" class="hidden">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Refund Amount</label>
+                        <input type="number"
+                            name="refund_amount"
+                            id="disputeRefundAmount"
+                            step="0.01"
+                            min="0.01"
+                            class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white"
+                            placeholder="0.00">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Enter refund amount. For full refunds, this will be automatically calculated.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Resolution Notes *</label>
+                        <textarea name="resolution_notes"
+                                id="disputeResolutionNotes"
+                                rows="3"
+                                required
+                                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white"
+                                placeholder="Explain your decision..."></textarea>
+                    </div>
+                    
+                    <button type="submit"
+                            class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                        Submit Resolution
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispute Template (Hidden) -->
+    <template id="dispute-row-template">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Booking</p>
+                            <p class="font-medium text-gray-900 dark:text-white dispute-booking-id">...</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Opened by: <span class="dispute-opened-by">...</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Reason</p>
+                            <p class="font-medium text-gray-900 dark:text-white dispute-reason truncate">...</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Opened: <span class="dispute-created">...</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                            <span class="status-badge inline-block px-3 py-1 rounded-full text-xs font-medium mt-1"></span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="dispute-resolved-info">
+                                <!-- Will show resolution details if resolved -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ml-4 flex flex-col space-y-2">
+                    <button class="view-dispute-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                        Details
+                    </button>
+                    <button class="resolve-dispute-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                        Resolve
+                    </button>
+                    <button class="close-dispute-btn bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+    {% endif %}
+
+    <!-- Open Dispute Modal (for buyers) -->
+    {% if user.role == "buyer" %}
+    <div id="openDisputeModal"
+        tabindex="-1"
+        aria-hidden="true"
+        class="hidden overflow-y-auto overflow-x-hidden fixed inset-0 z-50 flex justify-center items-center bg-black/40">
+        
+        <div class="relative p-4 w-full max-w-md">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Open Dispute
+                    </h3>
+                    <button type="button"
+                            class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5"
+                            data-modal-hide="openDisputeModal">
+                        X
+                    </button>
+                </div>
+                
+                <form id="open-dispute-form" class="p-6 space-y-4">
+                    <input type="hidden" id="disputeBookingId" name="booking_id">
+                    
+                    <div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            Opening a dispute for booking: <span id="disputeBookingInfo" class="font-medium">...</span>
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Reason *</label>
+                        <textarea name="reason"
+                                id="disputeReason"
+                                rows="4"
+                                required
+                                class="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg block w-full p-2.5 text-gray-900 dark:text-white"
+                                placeholder="Describe the issue with this booking..."></textarea>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Please be specific about what went wrong. This helps us resolve the issue faster.
+                        </p>
+                    </div>
+                    
+                    <button type="submit"
+                            class="w-full text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-4 py-2.5 transition">
+                        Open Dispute
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
+
+<section id="react-dashboard" class="mt-8">
+    <div id="react-root"></div>
+</section>
 
 <script type="module" src="/static/js/dashboard.js"></script>
+
 
 {% endblock %}

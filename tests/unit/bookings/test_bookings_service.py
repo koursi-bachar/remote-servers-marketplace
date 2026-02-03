@@ -452,7 +452,7 @@ class TestBookingsService:
     def test_confirm_booking_transitions_from_requested_to_confirmed(self, bookings_service, sample_booking, mock_repository, mock_notifications_public, mock_db):
         """Test successful booking confirmation"""
         mock_booking = sample_booking
-        mock_booking.end_time = datetime(2026, 1, 15, 20, 0, 0, tzinfo=timezone.utc)
+        mock_booking.end_time = datetime(2027, 1, 15, 20, 0, 0, tzinfo=timezone.utc)
         mock_booking.id = uuid4()
 
         mock_repository.update_booking.return_value = mock_booking
