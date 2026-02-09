@@ -37,7 +37,6 @@ export const ListingsApp: React.FC = () => {
   });
 
   useEffect(() => {
-    console.log('ListingsApp mounted, loading listings...');
     loadListings();
   }, []);
 
@@ -51,10 +50,9 @@ const loadListings = async () => {
     
     // Handle the actual API response structure
     if (response.data && Array.isArray(response.data)) {
-      // Response.data is an array of { listing: MachineListing, latest_metrics: {...} }
       listingsData = response.data
         .map(item => {
-          // If item has a 'listing' property, use that
+          // If item has a 'listing' property, use it
           if (item && typeof item === 'object' && 'listing' in item) {
             return item.listing;
           }
@@ -66,8 +64,6 @@ const loadListings = async () => {
       // Fallback for other structures
       listingsData = response.data?.data || [];
     }
-    
-    console.log(`Loaded ${listingsData.length} listings`);
     
     setListings(listingsData);
     setFilteredListings(listingsData);
@@ -297,15 +293,12 @@ const clearFilters = () => {
         organization_id: organizationId
       };
 
-      console.log('Step 1: Creating booking draft...');
-      
       // Try payment-enabled booking first, fallback to regular
       let booking;
       try {
         const response = await api.requestBookingWithPayment(bookingPayload);
         booking = response.data?.data || response.data;
       } catch (error: any) {
-        console.log('Payment booking failed, trying regular booking:', error);
         const response = await api.requestBooking(bookingPayload);
         booking = response.data?.data || response.data;
       }
@@ -314,12 +307,8 @@ const clearFilters = () => {
         throw new Error('Failed to create booking reservation');
       }
 
-      console.log('Step 2: Booking draft created:', booking.id);
-      
       // Get the price (use server's estimate or our calculation)
       const price = booking.total_price_estimate || totalPrice;
-      
-      console.log('Step 3: Creating Stripe checkout session...');
       
       // Create Stripe checkout
       const checkoutResponse = await fetch('/api/v1/payments/checkout', {
@@ -346,9 +335,7 @@ const clearFilters = () => {
         throw new Error('No payment URL received');
       }
 
-      console.log('Step 4: Redirecting to payment...');
-
-      // DON'T set bookingLoading to false here - we want to redirect immediately
+      // Don't set bookingLoading to false here - we want to redirect immediately
       window.location.href = checkoutData.checkout_url;
       
     } catch (error: any) {

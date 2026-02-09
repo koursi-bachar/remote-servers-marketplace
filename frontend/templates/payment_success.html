@@ -124,13 +124,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // If we have a session ID, we could fetch payment details
     if (sessionId) {
-        console.log('Payment session:', sessionId);
+        //console.log('Payment session:', sessionId);
     }
 });
 
 async function confirmBookingPayment(bookingId) {
     try {
-        console.log('Confirming payment for booking:', bookingId);
+        //console.log('Confirming payment for booking:', bookingId);
         
         // Update step 1 to show processing
         document.getElementById('step-1').innerHTML = `
@@ -174,7 +174,7 @@ async function confirmBookingPayment(bookingId) {
                 Your booking has been confirmed and sent to the provider
             `;
             
-            console.log('Booking payment confirmed:', data);
+            //console.log('Booking payment confirmed:', data);
             
         } else {
             const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const userRole = localStorage.getItem('user_role');
     
     if (token && userRole) {
-        console.log('Payment success: User is authenticated, forcing navbar update');
+        //console.log('Payment success: User is authenticated, forcing navbar update');
         
         // Find the nav element
         const nav = document.querySelector('nav');
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if it shows logged-out state
         if (currentNavHTML.includes('/login') || currentNavHTML.includes('/signup')) {
-            console.log('Detected logged-out navbar, replacing with logged-in navbar');
+            //console.log('Detected logged-out navbar, replacing with logged-in navbar');
             
             // Create the logged-in navbar HTML based on user role
             let userNavLinks = '';

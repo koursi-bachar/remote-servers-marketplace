@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { DashboardApp } from './DashboardApp.tsx'
 import { ListingsApp } from './ListingsApp.tsx'
 import { HomePage } from './components/HomePage.tsx'
 import './index.css'
@@ -13,14 +12,7 @@ export { CheckIcon, Github, Linkedin, Mail, ChevronDown, ChevronUp }
 
 function mountReactApp() {
 
-
-
-
-
   const currentPath = window.location.pathname;
-  
-  console.log('🔍 Checking page:', currentPath);
-  console.log('🔍 Document body children:', document.body.children.length);
   
   // List of pages that should NOT mount React
   const nonReactPages = ['/login', '/signup', '/logout'];
@@ -28,8 +20,7 @@ function mountReactApp() {
   // Check if current path is a non-React page
   for (const page of nonReactPages) {
     if (currentPath === page || currentPath.startsWith(page + '/')) {
-      console.log(`🚫 Skipping React mount for ${currentPath}`);
-      
+
       // Clean up any React root elements that might have been created
       const reactRoots = [
         'react-listings-root',
@@ -43,7 +34,6 @@ function mountReactApp() {
       reactRoots.forEach(rootId => {
         const element = document.getElementById(rootId);
         if (element) {
-          console.log(`🧹 Removing leftover React root: ${rootId}`);
           element.remove();
         }
       });
@@ -53,24 +43,8 @@ function mountReactApp() {
   }
 
 
-
-
-  
-  // // Get the current path
-  // const currentPath = window.location.pathname;
-  
-  // console.log('Mounting React app for path:', currentPath);
-
-  // // Pages that should NOT have React mounted
-  // const nonReactPages = [
-  //   '/login',
-  //   '/signup',
-  //   '/logout'
-  // ];
-
   // Check if this is a non-React page
   if (nonReactPages.some(page => currentPath === page || currentPath.startsWith(page + '/'))) {
-    console.log('This is a non-React page, skipping React mount');
     return;
   }
 
@@ -93,15 +67,13 @@ function mountReactApp() {
     if (element) {
       targetRoot = element;
       targetRootId = config.id;
-      console.log(`Found root element: ${config.id}`);
       break;
     }
   }
 
   // If no specific root found, check path and create appropriate root
   if (!targetRoot) {
-    console.log('No specific root found, checking path...');
-    
+
     if (currentPath.includes('/listings') || currentPath.includes('/browse')) {
       targetRootId = 'react-listings-root';
     } else if (currentPath.includes('/dashboard') || currentPath.includes('/account')) {
@@ -112,7 +84,6 @@ function mountReactApp() {
       targetRootId = 'react-bookings-root';
     } else {
       // If it's not a React page and we're here, don't mount React
-      console.log('Not a React page, not mounting');
       return;
     }
 
@@ -127,51 +98,20 @@ function mountReactApp() {
     } else {
       document.body.appendChild(targetRoot);
     }
-    
-    console.log(`Created root element: ${targetRootId}`);
   }
-
-  // // Determine which app to mount
-  // let appToMount = null;
-
-  // if (currentPath.includes('/listings') || currentPath.includes('/browse')) {
-  //   console.log('Mounting ListingsApp');
-  //   appToMount = <ListingsApp />;
-  // } else if (currentPath.includes('/dashboard') || currentPath.includes('/account')) {
-  //   console.log('Mounting DashboardApp');
-  //   const userRole = localStorage.getItem('user_role') || 'buyer';
-  //   appToMount = <DashboardApp userRole={userRole} />;
-  // } else if (currentPath === '/' || currentPath.includes('/home')) {
-  //   console.log('Mounting HomePage');
-  //   appToMount = <HomePage />;
-  // } else if (currentPath.includes('/bookings')) {
-  //   console.log('Mounting BookingsApp (defaulting to Dashboard)');
-  //   const userRole = localStorage.getItem('user_role') || 'buyer';
-  //   appToMount = <DashboardApp userRole={userRole} />;
-  // } else {
-  //   console.log('Defaulting to HomePage');
-  //   appToMount = <HomePage />;
-  // }
-
-
 
 
   // Determine which app to mount
   let appToMount = null;
 
   if (currentPath.includes('/listings') || currentPath.includes('/browse')) {
-    console.log('Mounting ListingsApp');
     appToMount = <ListingsApp />;
   } else if (currentPath.includes('/dashboard') || currentPath.includes('/account')) {
-    console.log('Mounting DashboardApp');
     const userRole = localStorage.getItem('user_role') || 'buyer';
-    appToMount = <DashboardApp userRole={userRole} />;
+    //appToMount = <DashboardApp userRole={userRole} />;
   } else if (currentPath === '/' || currentPath.includes('/home')) {
-    console.log('Mounting HomePage');
     appToMount = <HomePage />;
   } else if (currentPath.includes('/bookings')) {
-    // Don't mount React on bookings page - it's a Flask page
-    console.log('Bookings page - not mounting React app');
     return; // Exit early, don't mount anything
   } else {
     console.log('Defaulting to HomePage');
@@ -180,7 +120,6 @@ function mountReactApp() {
 
   // Only continue if we have an app to mount
   if (!appToMount) {
-    console.log('No React app to mount for this page');
     return;
   }
 
@@ -195,7 +134,6 @@ function mountReactApp() {
         {appToMount}
       </React.StrictMode>
     );
-    console.log(`React app successfully mounted to ${targetRootId}`);
   } catch (error) {
     console.error('Error mounting React app:', error);
   }

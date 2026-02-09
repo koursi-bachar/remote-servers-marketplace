@@ -5,7 +5,7 @@ import { api } from '../api/client';
 
 interface ListingModalProps {
   listing: MachineListing;
-  show: boolean; // This is required for Flowbite Modal
+  show: boolean;
   onClose: () => void;
   onBookingRequest: (listing: MachineListing, startTime: string, endTime: string, selectedDate: string, organizationId: string | null) => Promise<void>;
 }
@@ -50,8 +50,7 @@ export const ListingModal: React.FC<ListingModalProps> = ({
 
   const loadBenchmarks = async (machineId: string) => {
     try {
-      // You'll need to implement this based on your API
-      // For now, we'll use dummy data
+      // Sample data
       setBenchmarks([
         { name: 'Geekbench 6', score: '24500', category: 'CPU' },
         { name: '3DMark Time Spy', score: '18500', category: 'GPU' },
