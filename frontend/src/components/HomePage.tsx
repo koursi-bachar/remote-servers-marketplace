@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { HeroSection } from './HeroSection';
-import { BenefitsSection } from './BenefitsSection'; // Renamed from FeaturesSection
+import { BenefitsSection } from './BenefitsSection';
 import { DashboardPreview } from './DashboardPreview';
 import { TestimonialsSection } from './TestimonialsSection';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
@@ -34,7 +34,7 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          {/* Benefits Section (formerly Features) */}
+          {/* Benefits Section */}
           <motion.section
             ref={benefitsRef}
             animate={benefitsControls}
@@ -43,7 +43,7 @@ export const HomePage: React.FC = () => {
               visible: { opacity: 1, y: 0 },
               hidden: { opacity: 0, y: 20 } // Reduced y offset for smoother animation
             }}
-            id="benefits" // Changed from features
+            id="benefits"
             className="py-16"
           >
             <BenefitsSection />

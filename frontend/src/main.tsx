@@ -107,7 +107,8 @@ function mountReactApp() {
   if (currentPath.includes('/listings') || currentPath.includes('/browse')) {
     appToMount = <ListingsApp />;
   } else if (currentPath.includes('/dashboard') || currentPath.includes('/account')) {
-    const userRole = localStorage.getItem('user_role') || 'buyer';
+    console.log('Dashboard app mount');
+    //const userRole = localStorage.getItem('user_role') || 'buyer';
     //appToMount = <DashboardApp userRole={userRole} />;
   } else if (currentPath === '/' || currentPath.includes('/home')) {
     appToMount = <HomePage />;
