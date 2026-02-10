@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building, Users, DollarSign, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Building, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 export const DashboardPreview: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'pending' | 'past'>('pending');
@@ -83,7 +83,6 @@ export const DashboardPreview: React.FC = () => {
           
           {/* Window Content */}
           <div className="w-full bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden border-1.5 border-gray-200 dark:border-white/10 p-6">
-
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
