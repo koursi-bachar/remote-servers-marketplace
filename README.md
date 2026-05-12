@@ -1,7 +1,7 @@
 # Remote Servers Marketplace
 
 A full-stack platform for renting high-performance computing (HPC) and AI/ML servers.
-Providers can list dedicated machines, and buyers can securely book compute resources.
+Providers can list dedicated servers for customers seeking high compute resources.
 
 ![Site Homepage](./screenshots/website-homepage.png "Site Homepage")
 
